@@ -10,6 +10,9 @@
 #include "font8x8_basic.h"
 #include "vga256.h"
 
+#define GPU_W 1920
+#define GPU_H 1080
+
 #define W 800
 #define H 600
 
@@ -39,6 +42,7 @@ static int lctrl = 0;
 static int rctrl = 0;
 static int lshift = 0;
 static int rshift = 0;
+int redraw = 1;
 
 static SDL_Texture *font_texture;
 
@@ -213,6 +217,11 @@ static int handle_events()
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                redraw = 1;
+            }
+            break;
         case SDL_TEXTINPUT:
             write_text(event.text.text);
             break;
@@ -275,10 +284,12 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
     r.x = 0;
     r.y = 0;
 
-    if (memcmp(buffer, console, CONSOLE_LEN)) {
+    if (redraw || memcmp(buffer, console, CONSOLE_LEN)) {
         memcpy(console, buffer, CONSOLE_LEN);
+        redraw = 0;
        
         // Clear backbuffer texture
+        SDL_RenderClear(renderer);
         SDL_SetRenderTarget(renderer, gpu_texture);
         SDL_RenderClear(renderer);
 
@@ -304,13 +315,13 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
 
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, gpu_texture, &r, NULL);
-        SDL_RenderPresent(renderer);
 
         delay_ms = 20;
     } else {
         delay_ms = 40;
     }
 
+    SDL_RenderPresent(renderer);
 
     return delay_ms;
 }
@@ -329,7 +340,9 @@ SDL_Renderer* init_sdl()
     font_texture = SDL_CreateTextureFromSurface(renderer, font_surface);
     SDL_FreeSurface(font_surface);
 
-    gpu_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, W, H);
+    gpu_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, GPU_W, GPU_H);
+
+    SDL_RenderSetLogicalSize(renderer, W, H);
     /*
     back_surface = SDL_CreateRGBSurface(0, W, H, 32, rmask, gmask, bmask, amask);
     SDL_SetSurfaceBlendMode(back_surface, SDL_BLENDMODE_NONE);
