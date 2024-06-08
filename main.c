@@ -13,9 +13,6 @@
 #define W 1920
 #define H 1200
 
-#define LW (1920) 
-#define LH (1200) 
-
 #define GLYPH_W 8
 #define GLYPH_H 8
 
@@ -107,7 +104,7 @@ static void write_key(int key_sym)
             fd_tty = open(device, O_WRONLY);
             result = ioctl(fd_tty, TIOCSTI, &key_sym);
             if(result < 0) {
-                printf("couldn't reopen device %s!\n", device);
+                printf("couldn't re-open %s!\n", device);
             }
         }
     } else {
@@ -264,7 +261,7 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
     int delay_ms = 20;
     SDL_Rect r = {0};
 
-    if (abs(memcmp(buffer, console, CONSOLE_LEN))) {
+    if (memcmp(buffer, console, CONSOLE_LEN)) {
         memcpy(console, buffer, CONSOLE_LEN);
         
         SDL_SetRenderTarget(renderer, gpu_texture);
@@ -305,7 +302,6 @@ SDL_Renderer* init_sdl()
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     SDL_Window *window = SDL_CreateWindow("ttysdl", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W, H, SDL_WINDOW_RESIZABLE);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
-    SDL_RenderSetLogicalSize(renderer, LW, LH);
     SDL_SetRenderDrawColor(renderer, 0xff, 0, 0xff, 0);
     SDL_RenderClear(renderer);
 
