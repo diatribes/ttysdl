@@ -278,8 +278,6 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
     int cursor_y = buffer[3] & 0xff;
     int delay_ms = 20;
 
-    int SDL_GetDesktopDisplayMode(int displayIndex, SDL_DisplayMode * mode);
-
     // We only want the console and will stretch to fit
     SDL_Rect r = {0};
     r.w = console_width * GLYPH_W;
