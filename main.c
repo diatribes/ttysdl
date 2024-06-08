@@ -75,20 +75,28 @@ SDL_Surface *make_font()
     return result;
 }
 
-static void put_glyph_rgb(SDL_Renderer *renderer, int x, int y, unsigned char c, int r, int g, int b, int br, int bg, int bb)
+static void put_glyph_rgb(SDL_Renderer *renderer, int x, int y, unsigned char c, int bg, int fg)
 {
     int dstx = x * GLYPH_W * GLYPH_SCALE;
     int dsty = y * GLYPH_H * GLYPH_SCALE;
     int srcx = (int)(c % 16) * GLYPH_W;
     int srcy = (int)(c / 16) * GLYPH_H;
 
+    int fg_r = vga256[fg*3] * 3;
+    int fg_g = vga256[fg*3+1] * 3;
+    int fg_b = vga256[fg*3+2] * 3;
+
+    int bg_r = vga256[bg*3] * 3;
+    int bg_g = vga256[bg*3+1] * 3;
+    int bg_b = vga256[bg*3+2] * 3;
+
     SDL_Rect src = { srcx, srcy, GLYPH_W, GLYPH_H };
     SDL_Rect dst = { dstx, dsty, GLYPH_W*GLYPH_SCALE, GLYPH_H*GLYPH_SCALE };
 
-    SDL_SetRenderDrawColor(renderer, br*3, bg*3, bb*3, 0xff);
+    SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, 0xff);
     SDL_RenderFillRect(renderer, &dst);
 
-    SDL_SetTextureColorMod(font_texture, r*3, g*3, b*3);
+    SDL_SetTextureColorMod(font_texture, fg_r, fg_g, fg_b);
     SDL_RenderCopy(renderer, font_texture, &src, &dst); 
 }
 
@@ -263,23 +271,32 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
 
     if (memcmp(buffer, console, CONSOLE_LEN)) {
         memcpy(console, buffer, CONSOLE_LEN);
-        
+       
+        // Clear backbuffer texture
         SDL_SetRenderTarget(renderer, gpu_texture);
         SDL_RenderClear(renderer);
+
         for(i = 0; i < console_width * console_height; i++) {
+
+            // Current position
             x = i % console_width;
             y = i / console_width;
+
+            // Character
             c = buffer[4+2*i] & 0xff;
+
+            // Colors
             fg = buffer[5+i*2] & 0x0f;
             bg = (buffer[5+i*2]>>4) & 0x0f;
-            put_glyph_rgb(renderer, x, y, c,
-                vga256[fg*3], vga256[fg*3+1], vga256[fg*3+2],
-                vga256[bg*3], vga256[bg*3+1], vga256[bg*3+2]);
-        }
-        put_glyph_rgb(renderer, cursor_x, cursor_y, '_',
-                vga256[fg*3], vga256[fg*3+1], vga256[fg*3+2],
-                vga256[bg*3], vga256[bg*3+1], vga256[bg*3+2]);
 
+            // Draw a glyph
+            put_glyph_rgb(renderer, x, y, c, bg, fg);
+        }
+
+        // Draw the cursor
+        put_glyph_rgb(renderer, cursor_x, cursor_y, '_', bg, fg);
+
+        // We only want the console and will stretch to fit
         r.w = console_width * GLYPH_W;
         r.h = console_height * GLYPH_H;
         r.x = 0;
@@ -346,7 +363,7 @@ int main(int argc, char **argv)
     }
     printf("opened %s\n", path_tty);
 
-    // Get console sizez
+    // Get console size
     if (ioctl(fd_tty, TIOCGWINSZ, &dimensions) >= 0) {
         console_width = dimensions.ws_col;
         console_height = dimensions.ws_row;
