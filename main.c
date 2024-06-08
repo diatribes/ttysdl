@@ -36,6 +36,7 @@
 static int fd_tty = -1;
 static int console_width = 80;
 static int console_height = 40;
+static int console_lock_size = 0;
 static int tty_number = 2;
 
 static int lctrl = 0;
@@ -277,6 +278,8 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
     int cursor_y = buffer[3] & 0xff;
     int delay_ms = 20;
 
+    int SDL_GetDesktopDisplayMode(int displayIndex, SDL_DisplayMode * mode);
+
     // We only want the console and will stretch to fit
     SDL_Rect r = {0};
     r.w = console_width * GLYPH_W;
@@ -340,9 +343,12 @@ SDL_Renderer* init_sdl()
     font_texture = SDL_CreateTextureFromSurface(renderer, font_surface);
     SDL_FreeSurface(font_surface);
 
-    gpu_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, GPU_W, GPU_H);
+    SDL_DisplayMode mode;
+    SDL_GetDesktopDisplayMode(0, &mode);
 
-    SDL_RenderSetLogicalSize(renderer, W, H);
+    gpu_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, mode.w, mode.h);
+
+    //SDL_RenderSetLogicalSize(renderer, W, H);
     /*
     back_surface = SDL_CreateRGBSurface(0, W, H, 32, rmask, gmask, bmask, amask);
     SDL_SetSurfaceBlendMode(back_surface, SDL_BLENDMODE_NONE);
@@ -365,6 +371,18 @@ int main(int argc, char **argv)
             printf("Usage: %s tty_number\n", argv[0]);
             exit(1);
         }
+
+        if (argc == 4) {
+            console_lock_size = 1;
+            if ((console_width = atoi(argv[2])) < 1) {
+                printf("Usage: %s tty_number\n", argv[0]);
+                exit(1);
+            }
+            if ((console_height = atoi(argv[3])) < 1) {
+                printf("Usage: %s tty_number\n", argv[0]);
+                exit(1);
+            }
+        }
     }
 
     // Construct tty and vcsa paths
@@ -380,8 +398,10 @@ int main(int argc, char **argv)
 
     // Get console size
     if (ioctl(fd_tty, TIOCGWINSZ, &dimensions) >= 0) {
-        console_width = dimensions.ws_col;
-        console_height = dimensions.ws_row;
+        if (!console_lock_size) {
+            console_width = dimensions.ws_col;
+            console_height = dimensions.ws_row;
+        }
         buffer = malloc(CONSOLE_LEN);
         console = malloc(CONSOLE_LEN);
         console[0] = 0;
@@ -389,6 +409,8 @@ int main(int argc, char **argv)
         perror("error");
         return -1;
     }
+
+    printf("we think the console is %dx%d characters...", console_width, console_height);
 
     // Init SDL
     SDL_Renderer *renderer = init_sdl();
@@ -399,16 +421,18 @@ int main(int argc, char **argv)
         read_vcsa(path_vcsa, buffer);
 
         // Adjust if screen size changed
-        if(console_height != (buffer[0] & 0xff) || console_width != (buffer[1] & 0xff)) {
-            console_height = (buffer[0] & 0xff);
-            console_width = (buffer[1] & 0xff);
+        if (!console_lock_size) {
+            if(console_height != (buffer[0] & 0xff) || console_width != (buffer[1] & 0xff)) {
+                console_height = (buffer[0] & 0xff);
+                console_width = (buffer[1] & 0xff);
 
-            free(buffer);
-            free(console);
-            buffer = malloc(CONSOLE_LEN);
-            console = malloc(CONSOLE_LEN);
-            printf("console size changed, realloc'ing");
-            continue;
+                free(buffer);
+                free(console);
+                buffer = malloc(CONSOLE_LEN);
+                console = malloc(CONSOLE_LEN);
+                printf("console size changed, realloc'ing");
+                continue;
+            }
         }
 
         // Render
