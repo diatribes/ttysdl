@@ -91,15 +91,16 @@ static void put_glyph_rgb(SDL_Renderer *renderer, int x, int y, unsigned char c,
     int fg_g = vga256[fg*3+1] * 3;
     int fg_b = vga256[fg*3+2] * 3;
 
-    int bg_r = vga256[bg*3] * 3;
-    int bg_g = vga256[bg*3+1] * 3;
-    int bg_b = vga256[bg*3+2] * 3;
+    int bg_r = bg == -1 ? 0 : vga256[bg*3] * 3;
+    int bg_g = bg == -1 ? 0 : vga256[bg*3+1] * 3;
+    int bg_b = bg == -1 ? 0 : vga256[bg*3+2] * 3;
 
     SDL_Rect src = { srcx, srcy, GLYPH_W, GLYPH_H };
     SDL_Rect dst = { dstx, dsty, GLYPH_W*GLYPH_SCALE, GLYPH_H*GLYPH_SCALE };
-
-    SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, 0xff);
-    SDL_RenderFillRect(renderer, &dst);
+    if (bg != -1) {
+        SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, 0xff);
+        SDL_RenderFillRect(renderer, &dst);
+    }
 
     SDL_SetTextureColorMod(font_texture, fg_r, fg_g, fg_b);
     SDL_RenderCopy(renderer, font_texture, &src, &dst); 
@@ -312,7 +313,7 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
         }
 
         // Draw the cursor
-        put_glyph_rgb(renderer, cursor_x, cursor_y, '_', bg, fg);
+        put_glyph_rgb(renderer, cursor_x, cursor_y, '_', -1, fg);
 
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, gpu_texture, &r, NULL);
