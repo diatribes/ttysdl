@@ -10,8 +10,8 @@
 #include "font8x8_basic.h"
 #include "vga256.h"
 
-#define W 1920
-#define H 1200
+#define W 800
+#define H 600
 
 #define GLYPH_W 8
 #define GLYPH_H 8
@@ -319,7 +319,7 @@ SDL_Renderer* init_sdl()
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     SDL_Window *window = SDL_CreateWindow("ttysdl", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W, H, SDL_WINDOW_RESIZABLE);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
-    SDL_SetRenderDrawColor(renderer, 0xff, 0, 0xff, 0);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(renderer);
 
     SDL_Surface *font_surface = make_font();
