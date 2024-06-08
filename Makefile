@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -O3 -pedantic -Wall  \
-		 -lm `pkg-config --cflags --libs sdl2 SDL2_mixer SDL2_image`
+		 -lm `pkg-config --cflags --libs sdl2`
 
 CFILES = main.c
 
