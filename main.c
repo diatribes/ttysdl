@@ -87,13 +87,13 @@ static void put_glyph_rgb(SDL_Renderer *renderer, int x, int y, unsigned char c,
     int srcx = (int)(c % 16) * GLYPH_W;
     int srcy = (int)(c / 16) * GLYPH_H;
 
-    int fg_r = vga256[fg*3] * 3;
-    int fg_g = vga256[fg*3+1] * 3;
-    int fg_b = vga256[fg*3+2] * 3;
+    int fg_r = vga256[fg*3+0] * 4;
+    int fg_g = vga256[fg*3+1] * 4;
+    int fg_b = vga256[fg*3+2] * 4;
 
-    int bg_r = bg == -1 ? 0 : vga256[bg*3] * 3;
-    int bg_g = bg == -1 ? 0 : vga256[bg*3+1] * 3;
-    int bg_b = bg == -1 ? 0 : vga256[bg*3+2] * 3;
+    int bg_r = bg == -1 ? 0 : vga256[bg*3+0] * 4;
+    int bg_g = bg == -1 ? 0 : vga256[bg*3+1] * 4;
+    int bg_b = bg == -1 ? 0 : vga256[bg*3+2] * 4;
 
     SDL_Rect src = { srcx, srcy, GLYPH_W, GLYPH_H };
     SDL_Rect dst = { dstx, dsty, GLYPH_W*GLYPH_SCALE, GLYPH_H*GLYPH_SCALE };
