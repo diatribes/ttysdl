@@ -267,7 +267,13 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
     int cursor_x = buffer[2] & 0xff;
     int cursor_y = buffer[3] & 0xff;
     int delay_ms = 20;
+
+    // We only want the console and will stretch to fit
     SDL_Rect r = {0};
+    r.w = console_width * GLYPH_W;
+    r.h = console_height * GLYPH_H;
+    r.x = 0;
+    r.y = 0;
 
     if (memcmp(buffer, console, CONSOLE_LEN)) {
         memcpy(console, buffer, CONSOLE_LEN);
@@ -296,19 +302,15 @@ static int render_console(SDL_Renderer *renderer, char *buffer, char *console)
         // Draw the cursor
         put_glyph_rgb(renderer, cursor_x, cursor_y, '_', bg, fg);
 
-        // We only want the console and will stretch to fit
-        r.w = console_width * GLYPH_W;
-        r.h = console_height * GLYPH_H;
-        r.x = 0;
-        r.y = 0;
+        SDL_SetRenderTarget(renderer, NULL);
+        SDL_RenderCopy(renderer, gpu_texture, &r, NULL);
+        SDL_RenderPresent(renderer);
+
         delay_ms = 20;
     } else {
         delay_ms = 40;
     }
 
-    SDL_SetRenderTarget(renderer, NULL);
-    SDL_RenderCopy(renderer, gpu_texture, &r, NULL);
-    SDL_RenderPresent(renderer);
 
     return delay_ms;
 }
